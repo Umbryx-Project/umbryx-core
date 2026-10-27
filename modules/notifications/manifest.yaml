@@ -1,0 +1,60 @@
+id: notifications
+name: Notification Channels
+version: 1.0.0
+description: >
+  Multi-channel notification dispatch. Sends alerts to Telegram, Slack,
+  and generic webhooks when security events occur (job completion,
+  finding creation, credential discovery).
+author: Umbryx
+license: MIT
+icon: bell
+
+depends_on: []
+
+permissions:
+  - read:findings
+  - read:hosts
+
+extensions:
+  settings.section:
+    - id: notification-channels
+      label: Notification Channels
+      component: NotificationsSection
+
+settings:
+  - key: telegram_enabled
+    label: Telegram Enabled
+    type: boolean
+    default: false
+  - key: telegram_bot_token
+    label: Telegram Bot Token
+    type: string
+    placeholder: "123456:ABC-DEF..."
+  - key: telegram_chat_id
+    label: Telegram Chat ID
+    type: string
+    placeholder: "-1001234567890"
+  - key: slack_enabled
+    label: Slack Enabled
+    type: boolean
+    default: false
+  - key: slack_webhook_url
+    label: Slack Webhook URL
+    type: string
+    placeholder: "https://hooks.slack.com/services/..."
+  - key: webhook_enabled
+    label: Generic Webhook Enabled
+    type: boolean
+    default: false
+  - key: webhook_url
+    label: Webhook URL
+    type: string
+    placeholder: "https://example.com/webhook"
+  - key: notify_on_finding
+    label: Notify on New Finding
+    type: boolean
+    default: true
+  - key: notify_on_job_done
+    label: Notify on Job Completion
+    type: boolean
+    default: true

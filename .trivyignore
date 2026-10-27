@@ -1,0 +1,128 @@
+# Trivy ignore — vulnerabilities triaged as accepted, with reasons.
+# Generated 2026-10-25 from the trivy 0.64.1 scan of the freshly built
+# backend image (python:3.12-slim base + pinned tool binaries).
+# Every entry has a re-review condition. Nothing here is silent.
+
+# ── Class A: no fixed version in debian trixie yet ────────────────────
+# The vulnerable code paths are not reachable in this container:
+#   util-linux/mount/nsenter/homed CVEs need a local untrusted shell
+#   in the container (none exists — no users, no setuid, non-root app);
+#   libxml2/ncurses/tiff/acl are pulled by image tooling, never fed
+#   attacker-controlled input by the app.
+# RE-REVIEW: when the matching DSA lands in debian 13 — drop the line
+# and let the gate verify the fix, do not keep the ignore.
+
+CVE-2025-69720
+
+CVE-2026-106553
+
+CVE-2026-106555
+
+CVE-2026-106583
+
+CVE-2026-12064
+
+CVE-2026-16742
+
+CVE-2026-36849
+
+CVE-2026-52490
+
+CVE-2026-54369
+
+CVE-2026-59999
+
+CVE-2026-60000
+
+CVE-2026-60002
+
+CVE-2026-6653
+
+CVE-2026-74860
+
+CVE-2026-76642
+
+CVE-2026-78408
+
+CVE-2026-78409
+
+CVE-2026-78410
+
+CVE-2026-8458
+
+CVE-2026-86138
+
+CVE-2026-86139
+
+CVE-2026-86140
+
+CVE-2026-86142
+
+CVE-2026-86143
+
+CVE-2026-86144
+
+CVE-2026-9538
+
+
+
+# ── Class B: embedded Go toolchains/modules inside third-party static
+# binaries (kubectl, docker-cli 29.2.0, compose 5.6.1, sliver 1.7.8).
+# These are the LATEST upstream releases; they still compile against
+# older Go stdlib / x-modules with published CVEs. Not recompilable
+# here. RE-REVIEW: on every upstream release bump — remove the CVEs
+# whose fix version the new binary embeds.
+
+CVE-2025-68121
+
+CVE-2026-111943
+
+CVE-2026-25679
+
+CVE-2026-27145
+
+CVE-2026-32280
+
+CVE-2026-32281
+
+CVE-2026-32283
+
+CVE-2026-32285
+
+CVE-2026-33811
+
+CVE-2026-33814
+
+CVE-2026-33818
+
+CVE-2026-39820
+
+CVE-2026-39821
+
+CVE-2026-39822
+
+CVE-2026-39836
+
+CVE-2026-42499
+
+CVE-2026-42504
+
+CVE-2026-56851
+
+CVE-2026-56853
+
+CVE-2026-56858
+
+CVE-2026-56859
+
+CVE-2026-56860
+
+CVE-2026-56862
+
+CVE-2026-63209
+
+CVE-2026-78667
+
+CVE-2026-78669
+
+CVE-2026-97031

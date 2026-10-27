@@ -1,0 +1,83 @@
+id: hello-world
+name: Hello World
+version: 1.0.0
+description: >
+  Demo extension module. Shows how to define object types,
+  extension points, and backend routes. Creates a "greeting"
+  object type with CRUD via the universal object model.
+author: Umbryx
+license: MIT
+icon: wave
+
+depends_on: []
+
+permissions:
+  - write:object
+  - read:object
+
+route_prefix: /api/ext/hello-world
+backend_entry: routes
+
+objects:
+  - type: greeting
+    name: Greeting
+    icon: mail
+    list_columns: [title, priority, category]
+    fields:
+      - name: title
+        type: string
+        label: Title
+        required: true
+        placeholder: "Hello, World!"
+      - name: message
+        type: text
+        label: Message
+        placeholder: "Write something..."
+      - name: priority
+        type: enum
+        label: Priority
+        options: [low, medium, high, critical]
+        default: medium
+      - name: category
+        type: string
+        label: Category
+        placeholder: "general"
+      - name: is_public
+        type: boolean
+        label: Public
+        default: false
+      - name: view_count
+        type: integer
+        label: View Count
+        default: 0
+
+extensions:
+  sidebar.nav:
+    - id: greetings
+      label: Greetings
+      icon: mail
+      view: greetings
+  dashboard.widget:
+    - id: greeting-stats
+      label: Greeting Stats
+      component: GreetingStatsWidget
+  project.tab:
+    - id: project-greetings
+      label: Greetings
+      icon: mail
+
+settings:
+  - key: max_greetings
+    label: Max Greetings Per Project
+    type: integer
+    default: 100
+    description: Maximum number of greeting objects per project
+  - key: default_priority
+    label: Default Priority
+    type: enum
+    options: [low, medium, high, critical]
+    default: medium
+  - key: allow_public
+    label: Allow Public Greetings
+    type: boolean
+    default: true

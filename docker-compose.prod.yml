@@ -1,0 +1,93 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: umbryx_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-umbryx}
+      POSTGRES_USER: ${POSTGRES_USER:-umbryx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-umbryx}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    # Pinned to 7.2, not floating "7-alpine" — see docker-compose.yml for why
+    # (Redis 7.4+ is RSALv2/SSPLv1, not BSD-3-Clause).
+    image: redis:7.2-alpine
+    container_name: umbryx_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-umbryx-backend}:${IMAGE_TAG:-latest}
+    container_name: umbryx_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-umbryx}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-umbryx}
+      REDIS_URL: redis://redis:6379/0
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      APP_ENV: production
+      UPLOAD_ROOT: /data/uploads
+      WEBHOOK_HMAC_SECRET: ${WEBHOOK_HMAC_SECRET:-}
+      # ── HA Configuration (uncomment for production) ─────────────────────
+      # REDIS_SENTINEL_HOSTS: "sentinel1:26379,sentinel2:26379,sentinel3:26379"
+      # REDIS_SENTINEL_MASTER: "mymaster"
+      # REDIS_SENTINEL_PASSWORD: ""
+      # DATABASE_REPLICA_URL: "postgresql://${POSTGRES_USER:-umbryx}:${POSTGRES_PASSWORD}@replica:5432/${POSTGRES_DB:-umbryx}"
+      # DATABASE_POOL_SIZE: "20"
+      # DATABASE_MAX_OVERFLOW: "40"
+      # DATABASE_POOL_RECYCLE: "1800"
+      # DATABASE_STATEMENT_TIMEOUT: "30000"
+    volumes:
+      - uploads:/data/uploads
+      - plugins:/data/plugins
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ${FRONTEND_IMAGE:-umbryx-frontend}:${IMAGE_TAG:-latest}
+    container_name: umbryx_frontend
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: umbryx_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
+  plugins:

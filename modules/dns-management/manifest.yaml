@@ -1,0 +1,76 @@
+id: dns-management
+name: DNS Management
+version: 1.0.0
+description: >
+  DNS record management with provider abstraction. Supports manual record
+  entry and Cloudflare DNS sync. Enables DNS enumeration and zone
+  management from within a project.
+author: Umbryx
+license: MIT
+icon: network
+
+depends_on: []
+
+permissions:
+  - read:hosts
+  - write:hosts
+
+objects:
+  - type: dns_record
+    name: DNS Record
+    icon: network
+    list_columns: [hostname, record_type, value, provider]
+    fields:
+      - name: hostname
+        type: string
+        label: Hostname
+        required: true
+        placeholder: "example.com"
+      - name: record_type
+        type: enum
+        label: Record Type
+        options: [A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, PTR]
+        default: A
+      - name: value
+        type: string
+        label: Value
+        required: true
+        placeholder: "192.168.1.1"
+      - name: ttl
+        type: integer
+        label: TTL
+        default: 3600
+      - name: provider
+        type: enum
+        label: Provider
+        options: [manual, cloudflare]
+        default: manual
+      - name: zone_id
+        type: string
+        label: Zone ID
+        placeholder: "Cloudflare zone ID"
+      - name: synced
+        type: boolean
+        label: Synced
+        default: false
+
+extensions:
+  project.tab:
+    - id: dns-records
+      label: DNS
+      icon: network
+  settings.section:
+    - id: dns-providers
+      label: DNS Providers
+      component: DNSSettings
+
+settings:
+  - key: cloudflare_api_token
+    label: Cloudflare API Token
+    type: string
+    placeholder: "Your Cloudflare API token"
+  - key: default_provider
+    label: Default DNS Provider
+    type: enum
+    options: [manual, cloudflare]
+    default: manual

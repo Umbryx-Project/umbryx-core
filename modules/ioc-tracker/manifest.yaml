@@ -1,0 +1,86 @@
+id: ioc-tracker
+name: IOC Tracker
+version: 1.0.0
+description: >
+  Track Indicators of Compromise (IOCs) across engagements.
+  Provides an IOC object type, a dashboard widget with recent sightings,
+  and a host-tab showing IOCs attributed to a specific host.
+author: Umbryx Team
+license: MIT
+icon: shield
+
+permissions:
+  - read:hosts
+  - read:findings
+
+route_prefix: /api/projects/{pid}/ext/ioc-tracker
+backend_entry: routes
+
+objects:
+  - type: ioc
+    name: IOC
+    icon: shield
+    list_columns: [value, ioc_type, severity, status]
+    fields:
+      - name: value
+        type: string
+        label: IOC Value
+        required: true
+        placeholder: "e.g. 192.168.1.1, evil.com, hash..."
+      - name: ioc_type
+        type: enum
+        label: Type
+        required: true
+        default: ip
+        options: [ip, domain, url, hash_md5, hash_sha256, email, file_path, registry_key, mutex]
+      - name: severity
+        type: enum
+        label: Severity
+        default: medium
+        options: [info, low, medium, high, critical]
+      - name: status
+        type: enum
+        label: Status
+        default: active
+        options: [active, contained, remediated, false_positive]
+      - name: context
+        type: text
+        label: Context
+        placeholder: "How/where this IOC was discovered..."
+      - name: source
+        type: string
+        label: Source
+        placeholder: "Tool, feed, or manual discovery"
+      - name: host_id
+        type: reference
+        label: Related Host
+        reference_type: host
+      - name: first_seen
+        type: datetime
+        label: First Seen
+      - name: last_seen
+        type: datetime
+        label: Last Seen
+
+extensions:
+  dashboard.widget:
+    - id: ioc-summary
+      label: IOC Summary
+      component: IOCWidget
+      order: 50
+  host.tab:
+    - id: host-iocs
+      label: IOCs
+      component: HostIOCTab
+      order: 30
+
+settings:
+  - key: auto_expire_days
+    label: Auto-expire IOCs after N days (0 = never)
+    type: integer
+    default: 0
+    description: IOCs older than N days are automatically marked 'contained'
+  - key: highlight_critical
+    label: Highlight critical IOCs in widget
+    type: boolean
+    default: true

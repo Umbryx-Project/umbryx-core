@@ -1,0 +1,25 @@
+id: roe
+name: Rules of Engagement
+version: 1.0.0
+description: >
+  Define and manage rules of engagement for each project — scope
+  boundaries, authorized actions, time windows, and special
+  instructions. Stored per-project and enforced as a reference
+  during operations.
+author: Umbryx
+license: MIT
+icon: scroll
+
+depends_on: []
+
+permissions:
+  - read:hosts
+  - read:networks
+
+extensions:
+  project.tab:
+    - id: roe
+      label: ROE
+      icon: scroll
+
+settings: []

@@ -1,0 +1,51 @@
+id: reporting
+name: Reporting & Export
+version: 1.0.0
+description: >
+  Generate engagement reports in PDF and HTML. Aggregates findings,
+  attack paths, host inventory, credentials, and timeline into
+  formatted deliverables. Includes project export/import for
+  cross-instance data transfer.
+author: Umbryx
+license: MIT
+icon: report
+
+depends_on: []
+
+permissions:
+  - read:hosts
+  - read:findings
+  - read:creds
+  - read:notes
+  - read:networks
+  - read:object
+
+extensions:
+  sidebar.nav:
+    - id: report
+      label: Report
+      icon: report
+      view: report
+
+settings:
+  - key: report_format
+    label: Default Report Format
+    type: enum
+    options: [pdf, html]
+    default: pdf
+  - key: include_remediation
+    label: Include Remediation Section
+    type: boolean
+    default: true
+  - key: include_timeline
+    label: Include Timeline
+    type: boolean
+    default: true
+  - key: include_attack_graph
+    label: Include Attack Graph
+    type: boolean
+    default: true
+  - key: organization_name
+    label: Organization Name (for report header)
+    type: string
+    placeholder: "Your company name"

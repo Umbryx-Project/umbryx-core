@@ -1,0 +1,47 @@
+FROM python:3.12-slim
+
+# Native libraries required by WeasyPrint (PDF report generation tests)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    libcairo2 \
+    antiword \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN useradd --create-home --shell /usr/sbin/nologin umbryx
+
+# Build context is the repo root (not backend/), so modules/ — a sibling
+# of backend/ — can be baked in below. All COPY sources are therefore
+# repo-root-relative; see .gitlab-ci.yml's backend-test job.
+COPY backend/requirements.txt backend/requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
+
+COPY backend/app/ ./app/
+COPY backend/tests/ ./tests/
+COPY backend/pytest.ini ./
+COPY backend/normalize_cov.py ./
+# tests/test_migration_077_project_dek.py loads a versions/*.py file
+# directly off disk by path (importlib), so alembic/ must be present in
+# the test image even though migrations aren't actually run here.
+COPY backend/alembic/ ./alembic/
+# modules/* (e.g. ioc-tracker) are normally a runtime bind mount
+# (docker-compose.yml: ./modules:/app/modules:ro), never baked into the
+# backend image — but the test image runs standalone with no mount, and
+# core/modules/loader.py needs a real modules/ dir at /app/modules
+# (MODULES_DIR) to register module routers, so tests exercising them
+# (e.g. test_ioc_tracker_api.py) need it baked in here instead.
+COPY modules/ ./modules/
+
+# Runtime data dir for uploads / audit log — must be writable by the test user
+# (several routers persist files under /data, e.g. loot uploads, audit log).
+RUN mkdir -p /data/uploads && chown -R umbryx:umbryx /app /data
+
+USER umbryx
+
+ENV APP_ENV=test
+
+CMD ["python", "-m", "pytest", "-v", "--tb=short"]

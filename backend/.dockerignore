@@ -1,0 +1,14 @@
+# Build-context hygiene for the production image (context = ./backend).
+# The test image (Dockerfile.test, repo-root context) is unaffected — it
+# deliberately ships tests and dev deps.
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+*.db
+.env
+.env.*
+!.env.example
+venv/
+.venv/

@@ -1,0 +1,76 @@
+# Environment
+.env
+.env.local
+.env.*.local
+.env.ha
+.env.demo
+.demo-data/
+
+# Data & uploads (user-generated content)
+data/
+db/data/
+
+# Docker volumes
+pgdata/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Misc
+*.zip
+*.tar.gz
+
+# Test & coverage artifacts
+.coverage
+**/.coverage
+coverage.xml
+**/coverage.xml
+.pytest_cache/
+**/pytest_cache/
+htmlcov/
+**/htmlcov/
+frontend/coverage/
+.vitest/
+*.db
+*.sqlite
+*.sqlite3
+
+# Analysis artifacts
+.scannerwork/
+.sonar/
+
+# Internal module docs (not for public repo)
+#docs/modules/*
+
+# TLS certificates (generated locally, never commit)
+nginx/certs/
+
+# local agent worktrees
+.claude/

@@ -1,0 +1,31 @@
+# Default profile: BoF kit (extension-kit.axs) pre-wired via axscripts.
+# The platform regenerates credentials/listeners on deploy.
+Teamserver:
+  interface: "0.0.0.0"
+  port: 4321
+  endpoint: "/endpoint"
+  password: "pass"
+  only_password: true
+  operators:
+    operator1: "pass1"
+  cert: "/data/server.rsa.crt"
+  key: "/data/server.rsa.key"
+  extenders:
+    - "/opt/extenders/beacon_listener_http/config.yaml"
+    - "/opt/extenders/beacon_listener_smb/config.yaml"
+    - "/opt/extenders/beacon_listener_tcp/config.yaml"
+    - "/opt/extenders/beacon_listener_dns/config.yaml"
+    - "/opt/extenders/beacon_agent/config.yaml"
+    - "/opt/extenders/gopher_listener_tcp/config.yaml"
+    - "/opt/extenders/gopher_agent/config.yaml"
+  axscripts:
+    - "/opt/extension-kit/extension-kit.axs"
+  access_token_live_hours: 12
+  refresh_token_live_hours: 168
+
+HttpServer:
+  error:
+    status: 404
+    headers:
+      Content-Type: "text/html; charset=UTF-8"
+    page: "/data/404page.html"
