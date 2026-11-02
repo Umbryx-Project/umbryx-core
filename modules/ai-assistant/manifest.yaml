@@ -1,0 +1,67 @@
+id: ai-assistant
+name: AI Assistant
+version: 2.0.0
+description: >
+  AI-powered security assistant with multi-provider LLM support (OpenAI, Anthropic,
+  Ollama), persistent chat history, agent mode with tool calling, risk-classified
+  safety controls, SSE streaming, and audit logging.
+author: Umbryx
+license: MIT
+icon: bolt
+
+depends_on: []
+
+permissions:
+  - read:hosts
+  - read:findings
+  - read:creds
+  - read:notes
+  - read:networks
+  - write:findings
+  - write:notes
+
+extensions:
+  sidebar.nav:
+    - id: ai-assistant
+      label: AI Assistant
+      icon: bolt
+      view: ai
+  settings.section:
+    - id: ai-providers
+      label: AI Providers
+      component: AISection
+
+settings:
+  - key: provider
+    label: Default Provider
+    type: enum
+    options: [openai, anthropic, ollama]
+    default: anthropic
+    description: Default LLM provider type
+  - key: model
+    label: Default Model
+    type: string
+    default: claude-sonnet-4-20250514
+    description: Default model identifier
+  - key: max_tokens
+    label: Max Tokens
+    type: integer
+    default: 4096
+  - key: temperature
+    label: Temperature
+    type: float
+    default: 0.7
+  - key: enable_tools
+    label: Enable Tool Calling
+    type: boolean
+    default: true
+  - key: require_confirmation_writes
+    label: Require Confirmation for Write Actions
+    type: boolean
+    default: true
+    description: When enabled, write-risk tools require user confirmation before execution
+  - key: block_critical_tools
+    label: Block Critical-Risk Tools
+    type: boolean
+    default: true
+    description: When enabled, critical-risk tools (e.g. run_playbook) are blocked entirely

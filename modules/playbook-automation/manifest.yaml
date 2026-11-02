@@ -1,0 +1,19 @@
+id: playbook-automation
+version: "1.0.0"
+name: Playbook Automation
+description: >
+  Event-driven automation workflows with declarative YAML format,
+  condition engine, step validation, and tool registry integration.
+
+permissions:
+  - read:findings
+  - write:notes
+  - read:hosts
+  - write:object
+
+extensions:
+  sidebar.nav:
+    - id: automations
+      label: Automations
+      icon: bolt
+      view: automations

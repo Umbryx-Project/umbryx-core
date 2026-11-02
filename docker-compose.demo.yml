@@ -1,0 +1,79 @@
+# Isolated demo stand — an instance seeded with synthetic data, used to
+# capture the documentation screenshots.
+#
+#   scripts/demo-stand.sh up        # build, start, migrate, seed
+#   scripts/demo-stand.sh down      # stop and delete its volume
+#
+# Run it only through that script, or by hand as:
+#
+#   docker compose -p umbryx-demo --env-file .env.demo \
+#       -f docker-compose.yml -f docker-compose.demo.yml up -d
+#
+# The project name is what separates the named volume (umbryx-demo_pgdata),
+# but a compose project alone is NOT enough isolation here, which is why this
+# override exists:
+#
+#   * container_name is hardcoded in docker-compose.yml, so a second stack
+#     collides on names with the running one and docker refuses to start it;
+#   * the backend bind-mounts ${DATA_DIR:-./data}:/data, and ./data holds the
+#     live instance's uploads, platform key (plat.pem), infra_states and
+#     admin-password.txt — sharing it would let the demo stand read and write
+#     real engagement material;
+#   * the backend gets /var/run/docker.sock, so without an override the demo
+#     stand can see and act on every container on the host, the live stack's
+#     included.
+#
+# The stand's /data lives in ./.demo-data (gitignored), not under /tmp: /tmp
+# is world-writable, and both the data directory and the file standing in for
+# the docker socket would otherwise be paths another local user could create
+# first — the socket placeholder in particular, which is the thing keeping
+# the stand away from the host daemon.
+#
+# Each of those is redirected below. Nothing here touches the live stack.
+
+networks:
+  default:
+    # An explicit subnet, because docker's default address pools are already
+    # fully subnetted on this host: 172.17-172.31 and every /20 of
+    # 192.168.0.0/16 are taken, largely by the per-workstation networks the
+    # platform creates. Asking docker for another network fails with "all
+    # predefined address pools have been fully subnetted". Those networks
+    # belong to live workstation records, so the stand picks an unused range
+    # instead of pruning them. Nothing in 10.0.0.0/8 is routed on this host.
+    ipam:
+      config:
+        - subnet: ${DEMO_SUBNET:-10.201.0.0/24}
+
+services:
+  db:
+    container_name: ${DEMO_PREFIX:-umbryx_demo}_db
+
+  redis:
+    container_name: ${DEMO_PREFIX:-umbryx_demo}_redis
+
+  backend:
+    container_name: ${DEMO_PREFIX:-umbryx_demo}_backend
+    volumes:
+      # Same list as docker-compose.yml, with /data pointed at the stand's own
+      # directory and the docker socket replaced by an empty file. The socket
+      # has to stay mounted as *something*: the path is not optional in the
+      # base file, and a missing host path would make docker create a
+      # directory there.
+      - ${DEMO_DATA_DIR:-./.demo-data}:/data
+      - ./modules:/app/modules:ro
+      - /etc/machine-id:/host/machine-id:ro
+      - /sys/class/dmi/id/product_uuid:/host/product_uuid:ro
+      - ${DEMO_DOCKER_SOCKET:-./.demo-data/no-docker.sock}:/var/run/docker.sock
+
+  frontend:
+    container_name: ${DEMO_PREFIX:-umbryx_demo}_frontend
+
+  nginx:
+    container_name: ${DEMO_PREFIX:-umbryx_demo}_nginx
+    ports: !override
+      # Loopback only. The base file publishes "${PORT}:80", which binds
+      # 0.0.0.0 — and this stand ships a password that is written down in the
+      # repository (the seeder sets every account to Demo2024!), so a stand
+      # left running would be an open instance on the LAN. Nothing needs to
+      # reach it but the capture script on this host.
+      - "127.0.0.1:${PORT:-8899}:80"

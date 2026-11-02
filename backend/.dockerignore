@@ -1,0 +1,8 @@
+# The main backend image (context ./backend) needs app/, alembic/,
+# scripts/ and requirements*.txt only — never local junk.
+.venv
+.cov-tmp
+.pytest_cache
+coverage.xml
+__pycache__/
+*.pyc

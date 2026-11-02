@@ -1,0 +1,26 @@
+# Only the TEST image builds from the repo root (backend/Dockerfile.test,
+# context "." in .gitlab-ci.yml) and it needs just backend/ + modules/.
+# Everything else — frontend/node_modules alone is ~220MB — must not be
+# shipped to the daemon on every CI run.
+.git
+frontend
+docs
+docker
+nginx
+data
+scripts
+*.md
+docker-compose.yml
+docker-compose.demo.yml
+docker-compose.prod.yml
+install.sh
+update.sh
+sonar-project.properties
+coverage.xml
+backend/.venv
+backend/.cov-tmp
+backend/.pytest_cache
+backend/coverage.xml
+backend/__pycache__
+**/__pycache__
+*.pyc
