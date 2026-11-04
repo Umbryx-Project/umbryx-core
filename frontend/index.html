@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Umbryx</title>
+  <link rel="icon" type="image/svg+xml" id="favicon-link" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2308090b'/%3E%3Cpath d='M16 4 L27 8 L27 17 C27 23 22 28 16 30 C10 28 5 23 5 17 L5 8 Z' fill='%2315bbb1' opacity='0.18'/%3E%3Cpath d='M16 4 L27 8 L27 17 C27 23 22 28 16 30 C10 28 5 23 5 17 L5 8 Z' fill='none' stroke='%2315bbb1' stroke-width='1.5'/%3E%3Cpath d='M11 16 L14.5 19.5 L21 13' stroke='%2315bbb1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/fonts/fonts.css"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body,#root{width:100%;height:100%;overflow:hidden;}
+    body{font-family:'JetBrains Mono',monospace;background:#08090b;color:#c8cdd6;}
+    /* Scrollbars stay invisible until the container they belong to is
+       hovered — a permanently-visible grey thumb reads as a stray UI
+       element on every scrollable panel (log tables, output consoles,
+       long lists) even when nothing needs scrolling. Firefox needs its
+       own scrollbar-color property; Chromium/Safari use the pseudo-elements. */
+    *{scrollbar-width:thin;scrollbar-color:transparent transparent;}
+    *:hover{scrollbar-color:#2a2d35 transparent;}
+    ::-webkit-scrollbar{width:4px;height:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:transparent;border-radius:2px;}
+    :hover::-webkit-scrollbar-thumb{background:#2a2d35;}
+    ::-webkit-scrollbar-thumb:hover{background:#3a3d48;}
+    /* Number inputs' native up/down spinner is drawn by the browser/OS,
+       not by our CSS — a bright, square, light-grey widget stapled onto
+       the right edge of an otherwise dark themed field (Priority, Max
+       tool calls, Timeout, Retry count, etc.), the same class of problem
+       as an unstyled native <select> popup. Hidden outright rather than
+       recolored: WebKit lets a pseudo-element be restyled, but Firefox's
+       -moz-appearance:textfield removes the spinner entirely with no
+       equivalent "recolor it" option, so a cross-browser-consistent look
+       means removing it everywhere, not just on WebKit. The field stays
+       type="number" (validation, numeric mobile keyboard) — only the
+       spin buttons go, becoming a plain text-like field for +/- input. */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+    input[type=number]{-moz-appearance:textfield;}
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.022;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size:128px 128px;}
+    @keyframes dash{to{stroke-dashoffset:-40}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+    input,textarea,select{font-family:'JetBrains Mono',monospace;color:#c8cdd6;}
+    input::placeholder,textarea::placeholder{color:#303540;}
+
+    /* KB Markdown styles */
+    .kb-markdown h1,.kb-markdown h2,.kb-markdown h3,.kb-markdown h4{font-family:'Space Grotesk',sans-serif;color:#f0f2f6;margin:1.2em 0 .5em;}
+    .kb-markdown h1{font-size:1.5em;border-bottom:1px solid #1e2029;padding-bottom:.4em;}
+    .kb-markdown h2{font-size:1.2em;border-bottom:1px solid #1a1c22;padding-bottom:.3em;}
+    .kb-markdown h3{font-size:1.05em;color:#d0d4dc;}
+    .kb-markdown h4{font-size:.95em;color:#a0a4ac;}
+    .kb-markdown p{margin:.6em 0;line-height:1.8;}
+    .kb-markdown ul,.kb-markdown ol{padding-left:1.5em;margin:.5em 0;}
+    .kb-markdown li{margin:.25em 0;line-height:1.7;}
+    .kb-markdown code{font-family:'JetBrains Mono',monospace;font-size:.88em;background:#0a0c10;border:1px solid #2a2d35;border-radius:3px;padding:1px 5px;color:#39d353;}
+    .kb-markdown pre{background:#0a0c10;border:1px solid #2a2d35;border-radius:6px;padding:12px 14px;overflow-x:auto;margin:.8em 0;}
+    .kb-markdown pre code{background:none;border:none;padding:0;color:#c8cdd6;font-size:.85em;}
+    .kb-markdown blockquote{border-left:3px solid #2a2d35;margin:.6em 0;padding:.3em .8em;color:#808590;}
+    .kb-markdown table{border-collapse:collapse;width:100%;margin:.8em 0;font-size:.9em;}
+    .kb-markdown th{background:#0d0f14;border:1px solid #2a2d35;padding:6px 10px;text-align:left;color:#a0a4ac;font-weight:600;}
+    .kb-markdown td{border:1px solid #1e2029;padding:5px 10px;color:#c8cdd6;}
+    .kb-markdown tr:hover td{background:#0d0f1488;}
+    .kb-markdown a{color:#15bbb1;text-decoration:none;}
+    .kb-markdown a:hover{text-decoration:underline;}
+    .kb-markdown strong{color:#e0e4ec;font-weight:700;}
+    .kb-markdown em{color:#a8b0bc;font-style:italic;}
+    .kb-markdown hr{border:none;border-top:1px solid #1e2029;margin:1em 0;}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

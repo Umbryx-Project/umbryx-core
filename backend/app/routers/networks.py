@@ -1,0 +1,168 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from .. import models, schemas
+from ..core.access import check_object_access, check_pid_access, get_user_member_pids
+from ..core.deps import get_current_user, is_admin
+from ..core.events import bcast
+from ..core.network_data import (
+    get_edges,
+    get_edges_for_nodes,
+    get_network_summary,
+    get_nodes,
+    get_nodes_in_bounds,
+    get_regions,
+    replace_edges,
+    replace_nodes,
+    replace_regions,
+)
+from ..core.permissions import PERM_NETWORK_UPDATE
+from ..core.utils import new_id
+from ..database import get_db
+
+router = APIRouter(prefix="/api/networks", tags=["networks"])
+
+
+def _net_out(net: models.Network, db: Session) -> schemas.Network:
+    """Build Network schema reading nodes/edges/regions from dedicated tables."""
+    obj = schemas.Network.from_orm_obj(net)
+    obj.nodes = get_nodes(net.id, db)
+    obj.edges = get_edges(net.id, db)
+    obj.regions = get_regions(net.id, db)
+    return obj
+
+
+@router.get("", response_model=list[schemas.Network], responses={404: {"description": "Not found"}})
+def list_networks(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+    pid: str | None = None,
+):
+    if pid:
+        check_pid_access(db, pid, user, "network.read")
+        nets = db.query(models.Network).filter(models.Network.pid == pid).all()
+    elif is_admin(user):
+        nets = db.query(models.Network).all()
+    else:
+        member_pids = get_user_member_pids(db, user)
+        nets = db.query(models.Network).filter(models.Network.pid.in_(member_pids)).all()
+    return [_net_out(n, db) for n in nets]
+
+
+@router.post(
+    "",
+    response_model=schemas.Network,
+    status_code=201,
+    responses={404: {"description": "Not found"}},
+)
+def create_network(
+    body: schemas.NetworkCreate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    check_pid_access(db, body.pid, user, PERM_NETWORK_UPDATE)
+    net = models.Network(
+        id=new_id("net"),
+        pid=body.pid,
+        name=body.name,
+        background=body.background,
+        meta_json={},
+    )
+    db.add(net)
+    db.commit()
+    db.refresh(net)
+    result = _net_out(net, db)
+    bcast(body.pid, "network", "create", result.model_dump())
+    return result
+
+
+@router.patch(
+    "/{nid}", response_model=schemas.Network, responses={404: {"description": "Not found"}}
+)
+def update_network(
+    nid: str,
+    body: schemas.NetworkUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    net = db.query(models.Network).filter(models.Network.id == nid).first()
+    if not net:
+        raise HTTPException(404, "Network not found")
+    check_object_access(db, net.pid, user, PERM_NETWORK_UPDATE)
+    if body.name is not None:
+        net.name = body.name
+    if body.background is not None:
+        net.background = body.background
+    if body.meta is not None:
+        net.meta_json = body.meta
+    if body.regions is not None:
+        replace_regions(net.id, net.pid, body.regions, db)
+    if body.nodes is not None:
+        replace_nodes(net.id, net.pid, body.nodes, db)
+    if body.edges is not None:
+        replace_edges(net.id, net.pid, body.edges, db)
+    db.commit()
+    db.refresh(net)
+    result = _net_out(net, db)
+    bcast(net.pid, "network", "update", result.model_dump())
+    return result
+
+
+@router.get("/{nid}/summary", responses={404: {"description": "Not found"}})
+def get_network_summary_endpoint(
+    nid: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    """Lightweight summary: counts, bounding box, regions, status breakdown.
+    Does not return node/edge arrays — use the full GET /{nid} or viewport endpoint for that.
+    """
+    net = db.query(models.Network).filter(models.Network.id == nid).first()
+    if not net:
+        raise HTTPException(404, "Network not found")
+    check_object_access(db, net.pid, user, "network.read")
+    summary = get_network_summary(nid, db)
+    summary["id"] = net.id
+    summary["pid"] = net.pid
+    summary["name"] = net.name
+    summary["background"] = net.background
+    return summary
+
+
+@router.get("/{nid}/viewport", responses={404: {"description": "Not found"}})
+def get_network_viewport(
+    nid: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+    x1: float = 0,
+    y1: float = 0,
+    x2: float = 10000,
+    y2: float = 10000,
+):
+    """Return nodes and edges within a bounding box for progressive loading."""
+    net = db.query(models.Network).filter(models.Network.id == nid).first()
+    if not net:
+        raise HTTPException(404, "Network not found")
+    check_object_access(db, net.pid, user, "network.read")
+    nodes = get_nodes_in_bounds(nid, x1, y1, x2, y2, db)
+    node_ids = {n["id"] for n in nodes}
+    edges = get_edges_for_nodes(nid, node_ids, db)
+    return {"nodes": nodes, "edges": edges}
+
+
+@router.delete("/{nid}", status_code=204, responses={404: {"description": "Not found"}})
+def delete_network(
+    nid: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    net = db.query(models.Network).filter(models.Network.id == nid).first()
+    if not net:
+        raise HTTPException(404, "Network not found")
+    check_object_access(db, net.pid, user, PERM_NETWORK_UPDATE)
+    pid = net.pid
+    db.delete(net)  # CASCADE deletes network_nodes/edges/regions
+    db.commit()
+    bcast(pid, "network", "delete", {"id": nid})

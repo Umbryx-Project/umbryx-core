@@ -1,0 +1,5 @@
+# Multi-stage build (npm ci inside) — host artifacts never belong in
+# the context.
+node_modules
+dist
+coverage
